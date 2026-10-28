@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StaffSync - Modern HR Management Solution</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Font Family Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 bg-slate-50 min-h-screen flex flex-col font-sans">
+
+    <!-- Toast Container for Notifications -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Main Navigation Bar -->
+    <header class="bg-indigo-900 text-white sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2 rounded-lg flex items-center justify-center">
+                    <i data-lucide="users" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">StaffSync</h1>
+                    <p class="text-xs text-indigo-300 hidden sm:block">MERN Stack HR Management Platform</p>
+                </div>
+            </div>
+
+            <!-- Role Selector & Quick Info -->
+            <div class="flex items-center gap-4">
+                <div class="bg-indigo-800/80 px-3 py-1.5 rounded-lg border border-indigo-700 flex items-center gap-2">
+                    <i data-lucide="user-check" class="w-4 h-4 text-indigo-300"></i>
+                    <span class="text-xs font-medium text-indigo-200 hidden md:inline">Active Role:</span>
+                    <select id="role-selector" onchange="switchRole(this.value)" class="bg-indigo-950 text-white text-xs font-semibold rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer">
+                        <option value="HR">HR Personnel</option>
+                        <option value="Manager">Department Manager</option>
+                        <option value="Employee">Employee (John Doe)</option>
+                    </select>
+                </div>
+                <button onclick="resetData()" class="text-xs text-indigo-200 hover:text-white bg-indigo-800/40 hover:bg-indigo-800 px-2.5 py-1.5 rounded transition flex items-center gap-1" title="Reset default data">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Container -->
+    <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 flex-shrink-0 bg-white rounded-xl shadow-sm border border-slate-200 p-4 h-fit sticky top-20">
+            <div class="mb-4 px-2">
+                <span id="role-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">
+                    HR Personnel View
+                </span>
+            </div>
+
+            <nav class="space-y-1">
+                <button onclick="setActiveTab('dashboard')" id="nav-dashboard" class="nav-btn active w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition text-indigo-700 bg-indigo-50 font-semibold">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    Dashboard
+                </button>
+
+                <button onclick="setActiveTab('employees')" id="nav-employees" class="nav-btn hr-only w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                    <i data-lucide="users-round" class="w-4 h-4"></i>
+                    Employee Directory
+                </button>
+
+                <button onclick="setActiveTab('leaves')" id="nav-leaves" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="calendar-off" class="w-4 h-4"></i>
+                        <span>Leave Requests</span>
+                    </div>
+                    <span id="pending-count-badge" class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </button>
+
+                <button onclick="setActiveTab('attendance')" id="nav-attendance" class="nav-btn emp-only w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                    Attendance Log
+                </button>
+
+                <button onclick="setActiveTab('training')" id="nav-training" class="nav-btn manager-only w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                    <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                    Team Training
+                </button>
+
+                <button onclick="setActiveTab('announcements')" id="nav-announcements" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                    <i data-lucide="megaphone" class="w-4 h-4"></i>
+                    Announcements
+                </button>
+
+                <div class="pt-4 mt-4 border-t border-slate-100">
+                    <div class="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Project Tools</div>
+
+                    <button onclick="setActiveTab('kanban')" id="nav-kanban" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                        <i data-lucide="kanban" class="w-4 h-4 text-indigo-600"></i>
+                        Kanban Board
+                    </button>
+
+                    <button onclick="setActiveTab('erdiagram')" id="nav-erdiagram" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                        <i data-lucide="database" class="w-4 h-4 text-emerald-600"></i>
+                        ER Diagram
+                    </button>
+
+                    <button onclick="setActiveTab('architecture')" id="nav-architecture" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                        <i data-lucide="layers" class="w-4 h-4 text-purple-600"></i>
+                        Architecture
+                    </button>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 space-y-6">
+
+            <!-- TAB 1: DASHBOARD -->
+            <section id="tab-dashboard" class="tab-content space-y-6">
+                <!-- Welcome Banner -->
+                <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-xl p-6 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold" id="welcome-title">Welcome back, HR Administrator!</h2>
+                        <p class="text-indigo-100 text-sm mt-1">Here is the latest snapshot of your organization's workflow today.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openApplyLeaveModal()" class="emp-only bg-white text-indigo-700 hover:bg-indigo-50 font-semibold px-4 py-2 rounded-lg text-sm shadow transition flex items-center gap-2">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Apply for Leave
+                        </button>
+                        <button onclick="openAddEmployeeModal()" class="hr-only bg-indigo-500 hover:bg-indigo-400 text-white font-semibold px-4 py-2 rounded-lg text-sm shadow transition flex items-center gap-2">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i> Add Employee
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Metric Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="kpi-container">
+                    <!-- Populated dynamically based on role -->
+                </div>
+
+                <!-- Interactive Main Panels -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- Left/Middle Section (2 cols) -->
+                    <div class="lg:col-span-2 space-y-6">
+                        
+                        <!-- Attendance Quick Widget (Employee View) -->
+                        <div class="emp-only bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="clock" class="w-5 h-5 text-indigo-600"></i> Daily Attendance Punch
+                                </h3>
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium" id="live-clock">--:--:--</span>
+                            </div>
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                                <div>
+                                    <p class="text-xs text-slate-500 font-medium">Today's Status</p>
+                                    <p class="text-lg font-bold" id="punch-status-text">Not Checked In</p>
+                                    <p class="text-xs text-slate-400" id="punch-time-details">First check in to log hours today.</p>
+                                </div>
+                                <div class="flex gap-2 w-full sm:w-auto">
+                                    <button id="btn-checkin" onclick="punchAttendance('checkin')" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-1.5">
+                                        <i data-lucide="log-in" class="w-4 h-4"></i> Check In
+                                    </button>
+                                    <button id="btn-checkout" onclick="punchAttendance('checkout')" class="flex-1 sm:flex-none bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-1.5 opacity-50 cursor-not-allowed" disabled>
+                                        <i data-lucide="log-out" class="w-4 h-4"></i> Check Out
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Leave Requests Preview -->
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="calendar" class="w-5 h-5 text-indigo-600"></i> 
+                                    <span id="leave-preview-title">Recent Leave Requests</span>
+                                </h3>
+                                <button onclick="setActiveTab('leaves')" class="text-xs text-indigo-600 hover:underline font-semibold">View All</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
+                                        <tr>
+                                            <th class="py-2.5 px-3">Employee</th>
+                                            <th class="py-2.5 px-3">Type</th>
+                                            <th class="py-2.5 px-3">Dates</th>
+                                            <th class="py-2.5 px-3">Status</th>
+                                            <th class="py-2.5 px-3 text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboard-leave-table" class="divide-y divide-slate-100">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right Section (1 col) -->
+                    <div class="space-y-6">
+                        <!-- Employee Profile Card (Employee View Only) -->
+                        <div class="emp-only bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                <i data-lucide="user" class="w-5 h-5 text-indigo-600"></i> Profile Summary
+                            </h3>
+                            <div class="flex items-center gap-3 pb-3 border-b border-slate-100">
+                                <div class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-lg">
+                                    JD
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-800">John Doe</h4>
+                                    <p class="text-xs text-slate-500">Frontend Developer • Engineering</p>
+                                    <span class="inline-block mt-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Active</span>
+                                </div>
+                            </div>
+                            <div class="mt-3 space-y-2 text-xs text-slate-600">
+                                <div class="flex justify-between"><span class="text-slate-400">Email:</span> john.doe@staffsync.io</div>
+                                <div class="flex justify-between"><span class="text-slate-400">Joined:</span> Jan 15, 2023</div>
+                                <div class="flex justify-between"><span class="text-slate-400">Leave Balance:</span> <strong class="text-indigo-600">14 Days</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Announcements Preview Feed -->
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="bell" class="w-5 h-5 text-indigo-600"></i> Announcements
+                                </h3>
+                                <button onclick="setActiveTab('announcements')" class="text-xs text-indigo-600 hover:underline font-semibold">Feed</button>
+                            </div>
+                            <div id="dashboard-announcements" class="space-y-3">
+                                <!-- Dynamic -->
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- TAB 2: EMPLOYEE DIRECTORY (HR ONLY) -->
+            <section id="tab-employees" class="tab-content hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Employee Directory</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Manage workforce profiles, roles, and department assignments.</p>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <div class="relative flex-1 sm:w-64">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                            <input type="text" id="employee-search" oninput="renderEmployeeDirectory()" placeholder="Search staff..." class="w-full pl-9 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <button onclick="openAddEmployeeModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition flex items-center gap-1.5 shrink-0">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Staff
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 uppercase border-b border-slate-100">
+                                <tr>
+                                    <th class="py-3 px-4">Employee</th>
+                                    <th class="py-3 px-4">Department</th>
+                                    <th class="py-3 px-4">Role</th>
+                                    <th class="py-3 px-4">Email</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employee-table-body" class="divide-y divide-slate-100">
+                                <!-- Dynamic Employees -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: LEAVE REQUESTS -->
+            <section id="tab-leaves" class="tab-content hidden space-y-6">
+                <div class="flex justify-between items-center bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Leave Management</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Track, review, and handle employee leave applications.</p>
+                    </div>
+                    <button onclick="openApplyLeaveModal()" class="emp-only bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center gap-1.5">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Apply for Leave
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 uppercase border-b border-slate-100">
+                                <tr>
+                                    <th class="py-3 px-4">Employee</th>
+                                    <th class="py-3 px-4">Leave Type</th>
+                                    <th class="py-3 px-4">Duration</th>
+                                    <th class="py-3 px-4">Reason</th>
+                                    <th class="py-3 px-4">Status</th>
+                                    <th class="py-3 px-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="full-leave-table-body" class="divide-y divide-slate-100">
+                                <!-- Dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: ATTENDANCE LOG (EMPLOYEE VIEW) -->
+            <section id="tab-attendance" class="tab-content hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold text-slate-800 mb-1">My Attendance History</h2>
+                    <p class="text-xs text-slate-500 mb-4">Real-time record of your daily check-ins and check-outs.</p>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-xs text-slate-500 uppercase border-b border-slate-100">
+                                <tr>
+                                    <th class="py-3 px-4">Date</th>
+                                    <th class="py-3 px-4">Check In</th>
+                                    <th class="py-3 px-4">Check Out</th>
+                                    <th class="py-3 px-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-history-body" class="divide-y divide-slate-100">
+                                <!-- Dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: MANAGER TRAINING (MANAGER VIEW) -->
+            <section id="tab-training" class="tab-content hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold text-slate-800 mb-1">Team Training & Upskilling</h2>
+                    <p class="text-xs text-slate-500 mb-4">Monitor employee progress across assigned technical track certifications.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="training-card-container">
+                        <!-- Dynamic -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: ANNOUNCEMENTS -->
+            <section id="tab-announcements" class="tab-content hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Company Announcements</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Stay updated with official news and HR notices.</p>
+                    </div>
+                    <button onclick="openAddAnnouncementModal()" class="hr-only bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition flex items-center gap-1.5">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Post Announcement
+                    </button>
+                </div>
+
+                <div id="full-announcements-list" class="space-y-4">
+                    <!-- Dynamic -->
+                </div>
+            </section>
+
+            <!-- TAB 7: KANBAN BOARD -->
+            <section id="tab-kanban" class="tab-content hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Project Workspace Kanban Board</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Move task cards across statuses to keep your team & mentor updated.</p>
+                    </div>
+                    <button onclick="openAddTaskModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add Task Card
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Column: To Do -->
+                    <div class="bg-slate-100 p-3 rounded-xl border border-slate-200 flex flex-col min-h-[400px]">
+                        <div class="flex justify-between items-center mb-3 px-1">
+                            <span class="font-bold text-xs uppercase tracking-wider text-slate-600">To Do</span>
+                            <span id="count-todo" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                        </div>
+                        <div id="col-todo" class="space-y-3 flex-1"></div>
+                    </div>
+
+                    <!-- Column: In Progress -->
+                    <div class="bg-blue-50/70 p-3 rounded-xl border border-blue-100 flex flex-col min-h-[400px]">
+                        <div class="flex justify-between items-center mb-3 px-1">
+                            <span class="font-bold text-xs uppercase tracking-wider text-blue-700">In Progress</span>
+                            <span id="count-in_progress" class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                        </div>
+                        <div id="col-in_progress" class="space-y-3 flex-1"></div>
+                    </div>
+
+                    <!-- Column: Under Review -->
+                    <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-100 flex flex-col min-h-[400px]">
+                        <div class="flex justify-between items-center mb-3 px-1">
+                            <span class="font-bold text-xs uppercase tracking-wider text-amber-700">Under Review</span>
+                            <span id="count-review" class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                        </div>
+                        <div id="col-review" class="space-y-3 flex-1"></div>
+                    </div>
+
+                    <!-- Column: Completed -->
+                    <div class="bg-emerald-50/70 p-3 rounded-xl border border-emerald-100 flex flex-col min-h-[400px]">
+                        <div class="flex justify-between items-center mb-3 px-1">
+                            <span class="font-bold text-xs uppercase tracking-wider text-emerald-700">Completed</span>
+                            <span id="count-completed" class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                        </div>
+                        <div id="col-completed" class="space-y-3 flex-1"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 8: ER DIAGRAM -->
+            <section id="tab-erdiagram" class="tab-content hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold text-slate-800 mb-1">Entity Relationship (ER) Diagram</h2>
+                    <p class="text-xs text-slate-500 mb-4">Database Schema mapping relations across MERN stack collections.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- User Model -->
+                        <div class="border-2 border-indigo-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                            <div class="bg-indigo-600 text-white font-bold text-xs px-3 py-2 flex justify-between items-center">
+                                <span>Users Collection</span>
+                                <i data-lucide="database" class="w-3.5 h-3.5"></i>
+                            </div>
+                            <div class="p-3 text-xs space-y-1.5 font-mono text-slate-700">
+                                <div class="text-indigo-600 font-bold">_id: ObjectId [PK]</div>
+                                <div>name: String</div>
+                                <div>email: String (Unique)</div>
+                                <div>password: String (Hashed)</div>
+                                <div class="font-semibold text-emerald-600">role: 'HR'|'Manager'|'Employee'</div>
+                                <div>department: String</div>
+                                <div>status: String</div>
+                            </div>
+                        </div>
+
+                        <!-- Leave Model -->
+                        <div class="border-2 border-amber-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                            <div class="bg-amber-600 text-white font-bold text-xs px-3 py-2 flex justify-between items-center">
+                                <span>Leaves Collection</span>
+                                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                            </div>
+                            <div class="p-3 text-xs space-y-1.5 font-mono text-slate-700">
+                                <div class="text-amber-600 font-bold">_id: ObjectId [PK]</div>
+                                <div class="text-indigo-600 font-bold">applicantId: ObjectId [FK -> User]</div>
+                                <div>type: 'Sick'|'Casual'|'Paid'</div>
+                                <div>startDate: Date</div>
+                                <div>endDate: Date</div>
+                                <div>reason: String</div>
+                                <div class="font-semibold text-amber-600">status: 'Pending'|'Approved'|'Rejected'</div>
+                            </div>
+                        </div>
+
+                        <!-- Attendance Model -->
+                        <div class="border-2 border-emerald-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                            <div class="bg-emerald-600 text-white font-bold text-xs px-3 py-2 flex justify-between items-center">
+                                <span>Attendance Collection</span>
+                                <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                            </div>
+                            <div class="p-3 text-xs space-y-1.5 font-mono text-slate-700">
+                                <div class="text-emerald-600 font-bold">_id: ObjectId [PK]</div>
+                                <div class="text-indigo-600 font-bold">userId: ObjectId [FK -> User]</div>
+                                <div>date: Date</div>
+                                <div>checkIn: String</div>
+                                <div>checkOut: String</div>
+                                <div>status: 'Present'|'Late'|'Half Day'</div>
+                            </div>
+                        </div>
+
+                        <!-- Announcement Model -->
+                        <div class="border-2 border-purple-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                            <div class="bg-purple-600 text-white font-bold text-xs px-3 py-2 flex justify-between items-center">
+                                <span>Announcements</span>
+                                <i data-lucide="megaphone" class="w-3.5 h-3.5"></i>
+                            </div>
+                            <div class="p-3 text-xs space-y-1.5 font-mono text-slate-700">
+                                <div class="text-purple-600 font-bold">_id: ObjectId [PK]</div>
+                                <div class="text-indigo-600 font-bold">authorId: ObjectId [FK -> User]</div>
+                                <div>title: String</div>
+                                <div>content: String</div>
+                                <div>category: String</div>
+                                <div>date: Date</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flow description -->
+                    <div class="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
+                        <strong class="text-slate-800">Relational Architecture Flow:</strong> User records link directly to Leave requests and Attendance logs through foreign key relational bindings. Role-based Middleware validates authentication headers (JWT token containing `user._id` and `user.role`) prior to performing MongoDB queries.
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 9: TECHNICAL ARCHITECTURE -->
+            <section id="tab-architecture" class="tab-content hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">StaffSync System Architecture</h2>
+                        <p class="text-xs text-slate-500">MERN Stack (MongoDB, Express.js, React.js, Node.js) MVC Pattern</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <h3 class="font-bold text-blue-900 text-sm mb-2 flex items-center gap-1.5">
+                                <i data-lucide="monitor" class="w-4 h-4 text-blue-600"></i> Frontend (React.js)
+                            </h3>
+                            <ul class="text-xs text-slate-600 space-y-1 list-disc list-inside">
+                                <li>Role-based dynamic UI component rendering</li>
+                                <li>State persistence via Context API / Hooks</li>
+                                <li>Tailwind CSS responsive design engine</li>
+                                <li>RESTful Client Axios integration</li>
+                            </ul>
+                        </div>
+
+                        <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                            <h3 class="font-bold text-emerald-900 text-sm mb-2 flex items-center gap-1.5">
+                                <i data-lucide="server" class="w-4 h-4 text-emerald-600"></i> Backend (Express / Node.js)
+                            </h3>
+                            <ul class="text-xs text-slate-600 space-y-1 list-disc list-inside">
+                                <li>Express MVC Controllers & Router endpoints</li>
+                                <li>JWT Token & Bcrypt Auth Middleware</li>
+                                <li>Input validation & sanitization</li>
+                                <li>Error handling logic wrapper</li>
+                            </ul>
+                        </div>
+
+                        <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                            <h3 class="font-bold text-purple-900 text-sm mb-2 flex items-center gap-1.5">
+                                <i data-lucide="database" class="w-4 h-4 text-purple-600"></i> Database (MongoDB)
+                            </h3>
+                            <ul class="text-xs text-slate-600 space-y-1 list-disc list-inside">
+                                <li>Mongoose Schemas for data validation</li>
+                                <li>Indexed collections for high performance</li>
+                                <li>Relational references using `.populate()`</li>
+                                <li>Secure database connections</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- Modal: Add / Edit Employee -->
+    <div id="modal-employee" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+            <div class="px-5 py-4 bg-indigo-900 text-white flex justify-between items-center">
+                <h3 class="font-bold text-sm" id="modal-employee-title">Add New Employee</h3>
+                <button onclick="closeModal('modal-employee')" class="text-indigo-200 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="saveEmployee(event)" class="p-5 space-y-3 text-sm">
+                <input type="hidden" id="emp-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
+                    <input type="text" id="emp-name" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Email Address</label>
+                    <input type="email" id="emp-email" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Department</label>
+                        <select id="emp-dept" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="Engineering">Engineering</option>
+                            <option value="Human Resources">Human Resources</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Sales">Sales</option>
+                            <option value="Finance">Finance</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Role</label>
+                        <select id="emp-role" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="Employee">Employee</option>
+                            <option value="Manager">Manager</option>
+                            <option value="HR">HR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-employee')" class="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold">Save Employee</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Apply Leave -->
+    <div id="modal-leave" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+            <div class="px-5 py-4 bg-indigo-900 text-white flex justify-between items-center">
+                <h3 class="font-bold text-sm">Apply for Leave</h3>
+                <button onclick="closeModal('modal-leave')" class="text-indigo-200 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="submitLeave(event)" class="p-5 space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Leave Type</label>
+                    <select id="leave-type" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="Casual Leave">Casual Leave</option>
+                        <option value="Sick Leave">Sick Leave</option>
+                        <option value="Paid Vacation">Paid Vacation</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Start Date</label>
+                        <input type="date" id="leave-start" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">End Date</label>
+                        <input type="date" id="leave-end" required class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Reason</label>
+                    <textarea id="leave-reason" required rows="3" placeholder="Brief explanation for leave request..." class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-leave')" class="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold">Submit Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Announcement -->
+    <div id="modal-announcement" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+            <div class="px-5 py-4 bg-indigo-900 text-white flex justify-between items-center">
+                <h3 class="font-bold text-sm">Post Company Announcement</h3>
+                <button onclick="closeModal('modal-announcement')" class="text-indigo-200 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="submitAnnouncement(event)" class="p-5 space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Title</label>
+                    <input type="text" id="anc-title" required placeholder="Announcement headline..." class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+                    <select id="anc-category" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="General Notice">General Notice</option>
+                        <option value="Policy Update">Policy Update</option>
+                        <option value="Holiday">Holiday & Event</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Content</label>
+                    <textarea id="anc-content" required rows="3" placeholder="Full announcement message..." class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-announcement')" class="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold">Post Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Kanban Task -->
+    <div id="modal-task" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden">
+            <div class="px-5 py-4 bg-indigo-900 text-white flex justify-between items-center">
+                <h3 class="font-bold text-sm">Add Project Task</h3>
+                <button onclick="closeModal('modal-task')" class="text-indigo-200 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="submitTask(event)" class="p-5 space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Task Title</label>
+                    <input type="text" id="task-title" required placeholder="User Story or Task title..." class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Epic / Module</label>
+                    <input type="text" id="task-epic" required placeholder="e.g. Technical Architecture, Backend" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-task')" class="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold">Add Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- APPLICATION SCRIPT -->
+    <script>
+        // Default Mock Data Initializer
+        const defaultData = {
+            employees: [
+                { id: '1', name: 'John Doe', email: 'john.doe@staffsync.io', department: 'Engineering', role: 'Employee', status: 'Active' },
+                { id: '2', name: 'Sarah Connor', email: 'sarah.c@staffsync.io', department: 'Human Resources', role: 'HR', status: 'Active' },
+                { id: '3', name: 'Michael Scott', email: 'michael.s@staffsync.io', department: 'Management', role: 'Manager', status: 'Active' },
+                { id: '4', name: 'Emily Davis', email: 'emily.d@staffsync.io', department: 'Engineering', role: 'Employee', status: 'Active' },
+                { id: '5', name: 'Robert Chen', email: 'robert.c@staffsync.io', department: 'Marketing', role: 'Employee', status: 'On Leave' }
+            ],
+            leaves: [
+                { id: 'l1', employeeName: 'Robert Chen', employeeId: '5', type: 'Sick Leave', startDate: '2026-10-28', endDate: '2026-10-30', reason: 'High fever and medical rest.', status: 'Pending' },
+                { id: 'l2', employeeName: 'John Doe', employeeId: '1', type: 'Casual Leave', startDate: '2026-11-02', endDate: '2026-11-03', reason: 'Family engagement event.', status: 'Approved' },
+                { id: 'l3', employeeName: 'Emily Davis', employeeId: '4', type: 'Paid Vacation', startDate: '2026-12-10', endDate: '2026-12-15', reason: 'Annual winter break.', status: 'Pending' }
+            ],
+            attendance: [
+                { id: 'a1', date: '2026-10-28', checkIn: '09:02 AM', checkOut: '--', status: 'Present' },
+                { id: 'a2', date: '2026-10-27', checkIn: '08:55 AM', checkOut: '05:05 PM', status: 'Present' },
+                { id: 'a3', date: '2026-10-26', checkIn: '09:15 AM', checkOut: '05:00 PM', status: 'Present' }
+            ],
+            announcements: [
+                { id: 'an1', title: 'Q4 All-Hands Meeting & Project Review', category: 'General Notice', date: 'Oct 28, 2026', content: 'Join us live on Friday at 3:00 PM for company achievements and project demo reviews.' },
+                { id: 'an2', title: 'Updated SmartBridge Capstone Guidelines', category: 'Policy Update', date: 'Oct 25, 2026', content: 'Make sure all Kanban stories are transitioned from To Do to Review prior to final evaluation.' }
+            ],
+            tasks: [
+                { id: 't1', title: 'TECHNICAL ARCHITECTURE', epic: 'Project Architecture', status: 'todo' },
+                { id: 't2', title: 'ER-DIAGRAM', epic: 'Project Architecture', status: 'todo' },
+                { id: 't3', title: 'SETUP MERN REPOSITORY', epic: 'Project Setup', status: 'in_progress' },
+                { id: 't4', title: 'AUTHENTICATION MIDDLEWARE', epic: 'Backend Development', status: 'review' },
+                { id: 't5', title: 'PROJECT WORKSPACE INITIATION', epic: 'Overview', status: 'completed' }
+            ],
+            training: [
+                { id: 'tr1', employee: 'John Doe', course: 'Full-Stack MERN Architecture', progress: 85, status: 'In Progress' },
+                { id: 'tr2', employee: 'Emily Davis', course: 'React Hooks & State Management', progress: 100, status: 'Completed' },
+                { id: 'tr3', employee: 'Robert Chen', course: 'Node.js Express Security Best Practices', progress: 40, status: 'In Progress' }
+            ]
+        };
+
+        // App State Management
+        let appState = {
+            currentRole: 'HR', // 'HR', 'Manager', 'Employee'
+            activeTab: 'dashboard',
+            employees: [],
+            leaves: [],
+            attendance: [],
+            announcements: [],
+            tasks: [],
+            training: []
+        };
+
+        // Initialize App on DOM Load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStateFromStorage();
+            initClock();
+            switchRole('HR'); // default view
+            lucide.createIcons();
+        });
+
+        // Load & Save State to LocalStorage
+        function loadStateFromStorage() {
+            const saved = localStorage.getItem('staffsync_state');
+            if (saved) {
+                try {
+                    appState = { ...appState, ...JSON.parse(saved) };
+                } catch (e) {
+                    appState = { ...appState, ...defaultData };
+                }
+            } else {
+                appState = { ...appState, ...defaultData };
+                saveStateToStorage();
+            }
+        }
+
+        function saveStateToStorage() {
+            localStorage.setItem('staffsync_state', JSON.stringify({
+                employees: appState.employees,
+                leaves: appState.leaves,
+                attendance: appState.attendance,
+                announcements: appState.announcements,
+                tasks: appState.tasks,
+                training: appState.training
+            }));
+        }
+
+        function resetData() {
+            if (confirm("Reset all project data to default initial state?")) {
+                localStorage.removeItem('staffsync_state');
+                appState = { ...appState, ...defaultData };
+                saveStateToStorage();
+                renderAllViews();
+                showToast("Data reset to defaults successfully!", "info");
+            }
+        }
+
+        // Live Clock Simulation
+        function initClock() {
+            const clockEl = document.getElementById('live-clock');
+            setInterval(() => {
+                const now = new Date();
+                if (clockEl) clockEl.innerText = now.toLocaleTimeString();
+            }, 1000);
+        }
+
+        // Navigation and Role Switching Logic
+        function switchRole(role) {
+            appState.currentRole = role;
+            document.getElementById('role-selector').value = role;
+
+            const roleBadge = document.getElementById('role-badge');
+            const welcomeTitle = document.getElementById('welcome-title');
+
+            // Hide all role-specific navigation buttons first
+            document.querySelectorAll('.hr-only, .manager-only, .emp-only').forEach(el => el.classList.add('hidden'));
+
+            if (role === 'HR') {
+                roleBadge.innerText = "HR Personnel View";
+                roleBadge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800";
+                welcomeTitle.innerText = "Welcome back, HR Administrator!";
+                document.querySelectorAll('.hr-only').forEach(el => el.classList.remove('hidden'));
+            } else if (role === 'Manager') {
+                roleBadge.innerText = "Department Manager View";
+                roleBadge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800";
+                welcomeTitle.innerText = "Welcome back, Team Manager!";
+                document.querySelectorAll('.manager-only').forEach(el => el.classList.remove('hidden'));
+            } else {
+                roleBadge.innerText = "Employee View (John Doe)";
+                roleBadge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800";
+                welcomeTitle.innerText = "Welcome back, John Doe!";
+                document.querySelectorAll('.emp-only').forEach(el => el.classList.remove('hidden'));
+            }
+
+            // Fallback to valid tab if current tab isn't permitted
+            if ((role === 'Employee' && appState.activeTab === 'employees') ||
+                (role === 'HR' && appState.activeTab === 'attendance')) {
+                setActiveTab('dashboard');
+            } else {
+                renderAllViews();
+            }
+        }
+
+        function setActiveTab(tabId) {
+            appState.activeTab = tabId;
+
+            // Highlight side nav
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-indigo-50', 'text-indigo-700', 'font-semibold');
+                btn.classList.add('text-slate-600');
+            });
+
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'bg-indigo-50', 'text-indigo-700', 'font-semibold');
+                activeBtn.classList.remove('text-slate-600');
+            }
+
+            // Display content tab
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            const targetTab = document.getElementById(`tab-${tabId}`);
+            if (targetTab) targetTab.classList.remove('hidden');
+
+            renderAllViews();
+            lucide.createIcons();
+        }
+
+        // Global Render Dispatcher
+        function renderAllViews() {
+            renderKPIs();
+            renderDashboardLeaves();
+            renderDashboardAnnouncements();
+            renderEmployeeDirectory();
+            renderFullLeaves();
+            renderAttendanceLog();
+            renderTrainingProgress();
+            renderFullAnnouncements();
+            renderKanban();
+            updateBadges();
+        }
+
+        function updateBadges() {
+            const pending = appState.leaves.filter(l => l.status === 'Pending').length;
+            const badge = document.getElementById('pending-count-badge');
+            if (badge) badge.innerText = pending;
+        }
+
+        // Render KPI Cards dynamically according to role
+        function renderKPIs() {
+            const container = document.getElementById('kpi-container');
+            if (!container) return;
+
+            const totalEmp = appState.employees.length;
+            const pendingLeaves = appState.leaves.filter(l => l.status === 'Pending').length;
+            const activeLeaves = appState.leaves.filter(l => l.status === 'Approved').length;
+
+            if (appState.currentRole === 'HR') {
+                container.innerHTML = `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="bg-indigo-100 p-3 rounded-lg text-indigo-600"><i data-lucide="users" class="w-6 h-6"></i></div>
+                        <div><p class="text-xs text-slate-500 font-medium">Total Employees</p><p class="text-xl font-bold text-slate-800">${totalEmp}</p></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="bg-amber-100 p-3 rounded-lg text-amber-600"><i data-lucide="clock" class="w-6 h-6"></i></div>
+                        <div><p class="text-xs text-slate-500 font-medium">Pending Approvals</p><p class="text-xl font-bold text-amber-600">${pendingLeaves}</p></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="bg-emerald-100 p-3 rounded-lg text-emerald-600"><i data-lucide="user-check" class="w-6 h-6"></i></div>
+                        <div><p class="text-xs text-slate-500 font-medium">On Approved Leave</p><p class="text-xl font-bold text-slate-800">${activeLeaves}</p></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="bg-blue-100 p-3 rounded-lg text-blue-600"><i data-lucide="building" class="w-6 h-6"></i></div>
+                        <div><p class="text-xs text-slate-500 font-medium">Departments</p><p class="text-xl font-bold text-slate-800">5</p></div>
+                    </div>
+                `;
+            } else if (appState.currentRole === 'Manager') {
+                container.innerHTML = `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="bg-purple-100 p-3 rounded-lg text-purple-600"><i data-lucide="users" class="w-6 h-6"></i></div>
+                        <div><p class="text-xs text-slate-500 font-medium">Team Size</p><p class="text-xl font-bold text-slate-800">3 Members</p></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="bg-amber-100 p-3 rounded-lg text-amber-600"><i data-lucide="calendar-off" class="w-6 h-6"></i></div>
+                        <div><p class="text-xs text-slate-500 font-medium">Team Pending Leaves</p><p class="text-xl font-bold text-amber-600">${pendingLeaves}</p></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="bg-emerald-100 p-3 rounded-lg text-emerald-600"><i data-lucide="graduation-cap" class="w-6 h-6"></i></div>
+                        <div><p class="text-xs text-slate-500 font-medium">Training Completed</p><p class="text-xl font-bold text-slate-800">1 / 3</p></div>
+                    </div>
+                `;
+            } else {
+                // Employee
+                const myLeaves = appState.leaves.filter(l => l.employeeName === 'John Doe');
+                container.innerHTML = `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="bg-emerald-100 p-3 rounded-lg text-emerald-600"><i data-lucide="sun" class="w-6 h-6"></i></div>
+                        <div><p class="text-xs text-slate-500 font-medium">Leave Balance</p><p class="text-xl font-bold text-slate-800">14 Days</p></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="bg-indigo-100 p-3 rounded-lg text-indigo-600"><i data-lucide="file-text" class="w-6 h-6"></i></div>
+                        <div><p class="text-xs text-slate-500 font-medium">My Applications</p><p class="text-xl font-bold text-slate-800">${myLeaves.length}</p></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                        <div class="bg-blue-100 p-3 rounded-lg text-blue-600"><i data-lucide="check-circle" class="w-6 h-6"></i></div>
+                        <div><p class="text-xs text-slate-500 font-medium">Attendance Score</p><p class="text-xl font-bold text-emerald-600">98%</p></div>
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        // Render Dashboard Leave Requests
+        function renderDashboardLeaves() {
+            const tbody = document.getElementById('dashboard-leave-table');
+            if (!tbody) return;
+
+            let records = appState.leaves;
+            if (appState.currentRole === 'Employee') {
+                records = records.filter(l => l.employeeName === 'John Doe');
+            }
+
+            if (records.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-xs text-slate-400">No leave requests found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = records.slice(0, 4).map(l => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-2.5 px-3 font-medium text-slate-800">${l.employeeName}</td>
+                    <td class="py-2.5 px-3 text-xs text-slate-600">${l.type}</td>
+                    <td class="py-2.5 px-3 text-xs text-slate-500">${l.startDate} to ${l.endDate}</td>
+                    <td class="py-2.5 px-3">${getStatusBadge(l.status)}</td>
+                    <td class="py-2.5 px-3 text-right">
+                        ${(appState.currentRole !== 'Employee' && l.status === 'Pending') ? `
+                            <div class="flex justify-end gap-1">
+                                <button onclick="updateLeaveStatus('${l.id}', 'Approved')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs px-2 py-0.5 rounded font-semibold">Approve</button>
+                                <button onclick="updateLeaveStatus('${l.id}', 'Rejected')" class="bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs px-2 py-0.5 rounded font-semibold">Reject</button>
+                            </div>
+                        ` : `<span class="text-xs text-slate-400">--</span>`}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Render Dashboard Announcements
+        function renderDashboardAnnouncements() {
+            const container = document.getElementById('dashboard-announcements');
+            if (!container) return;
+
+            if (appState.announcements.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400">No announcements posted.</p>`;
+                return;
+            }
+
+            container.innerHTML = appState.announcements.slice(0, 3).map(a => `
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[10px] uppercase font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">${a.category}</span>
+                        <span class="text-[10px] text-slate-400">${a.date}</span>
+                    </div>
+                    <h4 class="font-semibold text-xs text-slate-800 mt-1">${a.title}</h4>
+                </div>
+            `).join('');
+        }
+
+        // Employee Directory CRUD
+        function renderEmployeeDirectory() {
+            const tbody = document.getElementById('employee-table-body');
+            if (!tbody) return;
+
+            const searchVal = (document.getElementById('employee-search')?.value || '').toLowerCase();
+            const filtered = appState.employees.filter(e => 
+                e.name.toLowerCase().includes(searchVal) || 
+                e.department.toLowerCase().includes(searchVal) ||
+                e.email.toLowerCase().includes(searchVal)
+            );
+
+            tbody.innerHTML = filtered.map(e => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 font-semibold text-slate-800 flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold">
+                            ${e.name.split(' ').map(n=>n[0]).join('')}
+                        </div>
+                        ${e.name}
+                    </td>
+                    <td class="py-3 px-4 text-xs text-slate-600">${e.department}</td>
+                    <td class="py-3 px-4 text-xs font-medium text-indigo-600">${e.role}</td>
+                    <td class="py-3 px-4 text-xs text-slate-500">${e.email}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-bold ${e.status==='Active'?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">
+                            ${e.status}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="editEmployee('${e.id}')" class="text-xs text-indigo-600 hover:underline mr-2 font-semibold">Edit</button>
+                        <button onclick="deleteEmployee('${e.id}')" class="text-xs text-rose-600 hover:underline font-semibold">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddEmployeeModal() {
+            document.getElementById('modal-employee-title').innerText = "Add New Employee";
+            document.getElementById('emp-id').value = "";
+            document.getElementById('emp-name').value = "";
+            document.getElementById('emp-email').value = "";
+            openModal('modal-employee');
+        }
+
+        function editEmployee(id) {
+            const emp = appState.employees.find(e => e.id === id);
+            if (!emp) return;
+            document.getElementById('modal-employee-title').innerText = "Edit Employee Details";
+            document.getElementById('emp-id').value = emp.id;
+            document.getElementById('emp-name').value = emp.name;
+            document.getElementById('emp-email').value = emp.email;
+            document.getElementById('emp-dept').value = emp.department;
+            document.getElementById('emp-role').value = emp.role;
+            openModal('modal-employee');
+        }
+
+        function saveEmployee(event) {
+            event.preventDefault();
+            const id = document.getElementById('emp-id').value;
+            const name = document.getElementById('emp-name').value;
+            const email = document.getElementById('emp-email').value;
+            const department = document.getElementById('emp-dept').value;
+            const role = document.getElementById('emp-role').value;
+
+            if (id) {
+                // Update
+                appState.employees = appState.employees.map(e => e.id === id ? { ...e, name, email, department, role } : e);
+                showToast("Employee record updated successfully!", "success");
+            } else {
+                // Add
+                const newEmp = { id: Date.now().toString(), name, email, department, role, status: 'Active' };
+                appState.employees.unshift(newEmp);
+                showToast("New employee added to directory!", "success");
+            }
+
+            saveStateToStorage();
+            closeModal('modal-employee');
+            renderAllViews();
+        }
+
+        function deleteEmployee(id) {
+            if (confirm("Are you sure you want to remove this employee?")) {
+                appState.employees = appState.employees.filter(e => e.id !== id);
+                saveStateToStorage();
+                renderAllViews();
+                showToast("Employee deleted.", "info");
+            }
+        }
+
+        // Render Full Leaves Tab
+        function renderFullLeaves() {
+            const tbody = document.getElementById('full-leave-table-body');
+            if (!tbody) return;
+
+            let records = appState.leaves;
+            if (appState.currentRole === 'Employee') {
+                records = records.filter(l => l.employeeName === 'John Doe');
+            }
+
+            tbody.innerHTML = records.map(l => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 font-semibold text-slate-800">${l.employeeName}</td>
+                    <td class="py-3 px-4 text-xs font-medium text-slate-600">${l.type}</td>
+                    <td class="py-3 px-4 text-xs text-slate-500">${l.startDate} to ${l.endDate}</td>
+                    <td class="py-3 px-4 text-xs text-slate-600 max-w-xs">${l.reason}</td>
+                    <td class="py-3 px-4">${getStatusBadge(l.status)}</td>
+                    <td class="py-3 px-4 text-right">
+                        ${(appState.currentRole !== 'Employee' && l.status === 'Pending') ? `
+                            <button onclick="updateLeaveStatus('${l.id}', 'Approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1 rounded font-semibold mr-1">Approve</button>
+                            <button onclick="updateLeaveStatus('${l.id}', 'Rejected')" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-2.5 py-1 rounded font-semibold">Reject</button>
+                        ` : `<span class="text-xs text-slate-400">Processed</span>`}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateLeaveStatus(leaveId, newStatus) {
+            appState.leaves = appState.leaves.map(l => l.id === leaveId ? { ...l, status: newStatus } : l);
+            saveStateToStorage();
+            renderAllViews();
+            showToast(`Leave application marked as ${newStatus}!`, newStatus === 'Approved' ? 'success' : 'info');
+        }
+
+        function openApplyLeaveModal() {
+            openModal('modal-leave');
+        }
+
+        function submitLeave(event) {
+            event.preventDefault();
+            const type = document.getElementById('leave-type').value;
+            const startDate = document.getElementById('leave-start').value;
+            const endDate = document.getElementById('leave-end').value;
+            const reason = document.getElementById('leave-reason').value;
+
+            const newLeave = {
+                id: 'l_' + Date.now(),
+                employeeName: 'John Doe',
+                employeeId: '1',
+                type,
+                startDate,
+                endDate,
+                reason,
+                status: 'Pending'
+            };
+
+            appState.leaves.unshift(newLeave);
+            saveStateToStorage();
+            closeModal('modal-leave');
+            renderAllViews();
+            showToast("Leave request submitted for review!", "success");
+        }
+
+        // Attendance Actions
+        function punchAttendance(type) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const todayStr = now.toISOString().split('T')[0];
+
+            if (type === 'checkin') {
+                appState.attendance.unshift({
+                    id: 'att_' + Date.now(),
+                    date: todayStr,
+                    checkIn: timeStr,
+                    checkOut: '--',
+                    status: 'Present'
+                });
+                document.getElementById('punch-status-text').innerText = "Checked In";
+                document.getElementById('punch-time-details').innerText = `Punched in at ${timeStr}`;
+                document.getElementById('btn-checkin').disabled = true;
+                document.getElementById('btn-checkin').classList.add('opacity-50', 'cursor-not-allowed');
+                document.getElementById('btn-checkout').disabled = false;
+                document.getElementById('btn-checkout').classList.remove('opacity-50', 'cursor-not-allowed');
+                showToast(`Punched In at ${timeStr}`, "success");
+            } else {
+                if (appState.attendance.length > 0) {
+                    appState.attendance[0].checkOut = timeStr;
+                }
+                document.getElementById('punch-status-text').innerText = "Checked Out";
+                document.getElementById('punch-time-details').innerText = `Checked out at ${timeStr}`;
+                document.getElementById('btn-checkout').disabled = true;
+                document.getElementById('btn-checkout').classList.add('opacity-50', 'cursor-not-allowed');
+                showToast(`Punched Out at ${timeStr}`, "info");
+            }
+
+            saveStateToStorage();
+            renderAttendanceLog();
+        }
+
+        function renderAttendanceLog() {
+            const tbody = document.getElementById('attendance-history-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = appState.attendance.map(a => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 font-medium text-slate-800">${a.date}</td>
+                    <td class="py-3 px-4 text-xs font-semibold text-emerald-700">${a.checkIn}</td>
+                    <td class="py-3 px-4 text-xs font-semibold text-rose-700">${a.checkOut}</td>
+                    <td class="py-3 px-4"><span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded">${a.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Manager View - Training Progress
+        function renderTrainingProgress() {
+            const container = document.getElementById('training-card-container');
+            if (!container) return;
+
+            container.innerHTML = appState.training.map(t => `
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm">${t.employee}</h4>
+                            <p class="text-xs text-slate-500">${t.course}</p>
+                        </div>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded ${t.progress === 100 ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">${t.status}</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2 mt-3">
+                        <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: ${t.progress}%"></div>
+                    </div>
+                    <div class="text-right mt-1 text-[11px] font-semibold text-slate-500">${t.progress}% completed</div>
+                </div>
+            `).join('');
+        }
+
+        // Announcements
+        function renderFullAnnouncements() {
+            const container = document.getElementById('full-announcements-list');
+            if (!container) return;
+
+            container.innerHTML = appState.announcements.map(a => `
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-0.5 rounded-full uppercase">${a.category}</span>
+                        <span class="text-xs text-slate-400">${a.date}</span>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-base">${a.title}</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">${a.content}</p>
+                </div>
+            `).join('');
+        }
+
+        function openAddAnnouncementModal() {
+            openModal('modal-announcement');
+        }
+
+        function submitAnnouncement(event) {
+            event.preventDefault();
+            const title = document.getElementById('anc-title').value;
+            const category = document.getElementById('anc-category').value;
+            const content = document.getElementById('anc-content').value;
+
+            const newAnc = {
+                id: 'anc_' + Date.now(),
+                title,
+                category,
+                content,
+                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            };
+
+            appState.announcements.unshift(newAnc);
+            saveStateToStorage();
+            closeModal('modal-announcement');
+            renderAllViews();
+            showToast("Announcement published!", "success");
+        }
+
+        // Kanban Board Implementation
+        function renderKanban() {
+            const cols = ['todo', 'in_progress', 'review', 'completed'];
+
+            cols.forEach(col => {
+                const colEl = document.getElementById(`col-${col}`);
+                const countEl = document.getElementById(`count-${col}`);
+                if (!colEl) return;
+
+                const colTasks = appState.tasks.filter(t => t.status === col);
+                if (countEl) countEl.innerText = colTasks.length;
+
+                colEl.innerHTML = colTasks.map(t => `
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm space-y-2">
+                        <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase">${t.epic}</span>
+                        <h4 class="font-semibold text-xs text-slate-800">${t.title}</h4>
+                        <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                            ${col !== 'todo' ? `<button onclick="moveTask('${t.id}', 'prev')" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded font-bold text-slate-600">← Back</button>` : '<div></div>'}
+                            ${col !== 'completed' ? `<button onclick="moveTask('${t.id}', 'next')" class="text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-0.5 rounded font-bold">Move →</button>` : '<span class="text-[10px] text-emerald-600 font-bold">Done ✓</span>'}
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function moveTask(taskId, direction) {
+            const flow = ['todo', 'in_progress', 'review', 'completed'];
+            appState.tasks = appState.tasks.map(t => {
+                if (t.id === taskId) {
+                    const idx = flow.indexOf(t.status);
+                    const newIdx = direction === 'next' ? Math.min(idx + 1, flow.length - 1) : Math.max(idx - 1, 0);
+                    return { ...t, status: flow[newIdx] };
+                }
+                return t;
+            });
+            saveStateToStorage();
+            renderKanban();
+            showToast("Task status updated!", "info");
+        }
+
+        function openAddTaskModal() {
+            openModal('modal-task');
+        }
+
+        function submitTask(event) {
+            event.preventDefault();
+            const title = document.getElementById('task-title').value;
+            const epic = document.getElementById('task-epic').value;
+
+            appState.tasks.push({
+                id: 't_' + Date.now(),
+                title,
+                epic,
+                status: 'todo'
+            });
+
+            saveStateToStorage();
+            closeModal('modal-task');
+            renderKanban();
+            showToast("Task card added to Kanban!", "success");
+        }
+
+        // Helper Utilities
+        function getStatusBadge(status) {
+            if (status === 'Approved') return `<span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full">Approved</span>`;
+            if (status === 'Rejected') return `<span class="bg-rose-100 text-rose-800 text-xs font-bold px-2 py-0.5 rounded-full">Rejected</span>`;
+            return `<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">Pending</span>`;
+        }
+
+        function openModal(id) {
+            const m = document.getElementById(id);
+            if (m) {
+                m.classList.remove('hidden');
+                m.classList.add('flex');
+            }
+        }
+
+        function closeModal(id) {
+            const m = document.getElementById(id);
+            if (m) {
+                m.classList.add('hidden');
+                m.classList.remove('flex');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-slate-800';
+
+            toast.className = `${bgClass} text-white px-4 py-2.5 rounded-lg text-xs font-semibold shadow-lg pointer-events-auto transition duration-300 transform translate-y-2 opacity-0 flex items-center gap-2`;
+            toast.innerHTML = `<i data-lucide="${type==='success'?'check-circle':'info'}" class="w-4 h-4"></i> ${message}`;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
